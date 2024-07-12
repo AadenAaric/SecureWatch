@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket Example</title>
+</head>
+<body>
+  <div id="app">
+    <h1>WebSocket Example</h1>
+    <p id="status">Connecting...</p>
+    <div id="messages"></div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const status = document.getElementById("status");
+      const messages = document.getElementById("messages");
+
+      // WebSocket connection URL
+      const ws = new WebSocket('ws://127.0.0.1:8000/ws/notifications/');
+
+      ws.onopen = () => {
+        console.log('Connected to WebSocket');
+        status.textContent = "Connected to WebSocket";
+      };
+
+      ws.onmessage = (e) => {
+        const message = JSON.parse(e.data);
+        console.log('Received message:', message);
+        
+        const messageElement = document.createElement("p");
+        messageElement.textContent = "Received message: " + JSON.stringify(message);
+        messages.appendChild(messageElement);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket connection closed');
+        status.textContent = "WebSocket connection closed";
+      };
+
+      ws.onerror = (error) => {
+        console.log('WebSocket error:', error);
+        status.textContent = "WebSocket error";
+      };
+    });
+  </script>
+</body>
+</html>

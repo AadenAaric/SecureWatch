@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Component</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .notification {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="notifications"></div>
+
+    <script>
+        const notificationsContainer = document.getElementById('notifications');
+        const ws = new WebSocket('ws://127.0.0.1:8000/ws/notifications/');
+
+        ws.onmessage = (e) => {
+            const message = JSON.parse(e.data);
+            console.log('Received message:', message);
+            
+            const messageElement = document.createElement("p");
+            messageElement.textContent = "Received message: " + JSON.stringify(message);
+            notificationsContainer.appendChild(messageElement); // Use notificationsContainer instead of messages
+        };
+
+        ws.onerror = (e) => {
+            console.log('WebSocket error', e);
+        };
+
+        ws.onclose = (e) => {
+            console.log('WebSocket closed', e);
+        };
+
+        window.onbeforeunload = () => {
+            ws.close();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Component</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .notification {
+            background-color: #fff;
+            border-left: 6px solid #4caf50;
+            margin: 10px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .notification .title {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .notification .message {
+            font-size: 14px;
+        }
+        .notification .confidence {
+            font-size: 12px;
+            color: #888;
+        }
+        .btn-request-permission {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <button class="btn-request-permission" id="requestPermissionButton">Enable Notifications</button>
+    <div id="notifications"></div>
+
+    <script>
+        const notificationsContainer = document.getElementById('notifications');
+        const requestPermissionButton = document.getElementById('requestPermissionButton');
+        const ws = new WebSocket('ws://127.0.0.1:8000/ws/notifications/');
+
+        function showDesktopNotification(title, message) {
+            if (Notification.permission === 'granted') {
+                const notification = new Notification(title, { body: message });
+                console.log('Desktop notification shown:', title, message);
+            } else {
+                console.log('Notification permission not granted:', Notification.permission);
+            }
+        }
+
+        requestPermissionButton.addEventListener('click', () => {
+            Notification.requestPermission().then(permission => {
+                console.log('Notification permission status:', permission);
+                if (permission === 'granted') {
+                    alert('Desktop notifications enabled.');
+                } else {
+                    alert('Desktop notifications denied.');
+                }
+            });
+        });
+
+        ws.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            console.log('Received message:', data);
+
+            const notificationElement = document.createElement('div');
+            notificationElement.classList.add('notification');
+
+            const titleElement = document.createElement('div');
+            titleElement.classList.add('title');
+            titleElement.textContent = `Camera ID: ${data.camera_id}`;
+
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.textContent = `Identity: ${data.identity}`;
+
+            const confidenceElement = document.createElement('div');
+            confidenceElement.classList.add('confidence');
+            confidenceElement.textContent = `Confidence: ${(data.confidence * 100).toFixed(2)}%`;
+
+            notificationElement.appendChild(titleElement);
+            notificationElement.appendChild(messageElement);
+            notificationElement.appendChild(confidenceElement);
+            notificationsContainer.appendChild(notificationElement);
+
+            showDesktopNotification(`Camera ID: ${data.camera_id}`, `Identity: ${data.identity}, Confidence: ${(data.confidence * 100).toFixed(2)}%`);
+        };
+
+        ws.onerror = (e) => {
+            console.log('WebSocket error', e);
+        };
+
+        ws.onclose = (e) => {
+            console.log('WebSocket closed', e);
+        };
+
+        window.onbeforeunload = () => {
+            ws.close();
+        };
+
+        // Check and request permission on page load if not already granted or denied
+        if (Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                console.log('Initial notification permission status:', permission);
+            });
+        }
+    </script>
+</body>
+</html>

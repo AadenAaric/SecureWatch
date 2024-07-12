@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Feed</title>
+    <style>
+        #videoFeed {
+            width: 640px;
+            height: 480px;
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <h1>Live Video Feed</h1>
+    <img id="videoFeed" />
+
+    <script>
+        const videoFeed = document.getElementById('videoFeed');
+        const socket = new WebSocket('ws://127.0.0.1:8000/ws/video_feed/');
+
+        socket.onmessage = function(event) {
+            const imageData = event.data;
+            videoFeed.src = 'data:image/jpeg;base64,' + imageData;
+        };
+
+        socket.onclose = function(event) {
+            console.error('WebSocket closed:', event);
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+    </script>
+</body>
+</html>
