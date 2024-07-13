@@ -41,8 +41,6 @@ INSTALLED_APPS = [
     'channels',
     'notifications',
     'rest_framework',
-    'rest_framework_simplejwt',
-
 ]
 
 REST_FRAMEWORK = {
@@ -54,15 +52,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-from datetime import timedelta
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=365),  # Example: Access token lifetime set to 1 year
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),   # Example: Refresh token lifetime set to 1 day
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': False,
-}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
