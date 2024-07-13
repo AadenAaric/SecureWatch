@@ -9,3 +9,11 @@ class User (models.Model):
 
     def __str__(self):
         return self.name
+    
+
+class ActiveUser(models.Model):
+    hashed_id = models.CharField(max_length=255, unique=True)
+    user_id = models.IntegerField(default=int)
+    is_active = models.BooleanField(default=True)
+    def __str__(self):
+        return self.hashed_id

@@ -43,18 +43,12 @@ INSTALLED_APPS = [
     'rest_framework',
 ]
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-}
+
 
 
 
 MIDDLEWARE = [
+    #'shared_middlewares.authentication.AuthenticationMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -83,6 +77,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
+
 ASGI_APPLICATION = 'backend.asgi.application'
 CHANNEL_LAYERS = {
     'default' : {
@@ -142,3 +137,8 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+CSRF_COOKIE_NAME = "csrftoken"  # Optional: Specify the CSRF cookie name
+
+CSRF_HEADER_NAME = "HTTP_X_CSRFTOKEN"  # Define the header name to expect
+
+CSRF_COOKIE_HTTPONLY = False  # Ensure CSRF cookie can be accessed by JavaScript if needed

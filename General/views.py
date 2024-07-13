@@ -1,11 +1,16 @@
 from django.shortcuts import render, HttpResponse, get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from django.utils.decorators import method_decorator
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .models import User
-from .serializers import UserSerializer
+from .models import User,ActiveUser
+from .serializers import UserSerializer, ActiveUserSerializer
 import json
+from .utils import hash_user_id
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.utils.decorators import method_decorator
+
 
 
 #testing api
@@ -25,22 +30,39 @@ def register(request):
         return Response({"Message":"User Registered Succesfully!","id":serializer.data['id']},status=status.HTTP_201_CREATED)
     return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['POST'])
 def login(request):
     email = request.data.get('email')
     password = request.data.get('password')
     try:
-        user = User.objects.get(email=email,password=password)
-        return Response({"message":"Login Successfull","id":user.id},status=status.HTTP_200_OK)
+        user = User.objects.get(email=email, password=password)
+        hash = hash_user_id(user.id)
+        ActSer = ActiveUserSerializer(data={"hashed_id":hash,"user_id":user.id})
+        if ActSer.is_valid():
+           ActSer.save() 
+           response = Response({
+                "message": "Login Successful",
+                "id": hash
+            }, status=status.HTTP_200_OK)
+           response.set_cookie(key='csrftoken', value=request.COOKIES.get('csrftoken'))
+           return response
+        return Response({"message": "DataBase Error!"}, status=status.HTTP_400_BAD_REQUEST)
     except User.DoesNotExist:
-        return Response({"message":"Invalid Credentials"},status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"message": "Invalid Credentials"}, status=status.HTTP_401_UNAUTHORIZED)
     
 
+
+@api_view(['POST'])
+def logout(request):
+    user = request.user
+    user.delete()
+    return Response({"message":"Successfully logged out!"},status=status.HTTP_200_OK)
+    
     
 #Updating, Fetching and Deleting devices----------------------------------------------------------------------------------
 
 @api_view(['PUT'])
-@permission_classes([IsAuthenticated])
 def update_device_urls(request):
     user_id = request.headers.get('id')
     user = get_object_or_404(User, pk=user_id)
@@ -52,9 +74,20 @@ def update_device_urls(request):
     return Response({"message":"Device Url not Provided!"},status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET'])
+def Get_hashed(request):
+    try:
+        # Query the ActiveUser model to get all hashed_id values
+        hashes = ActiveUser.objects.values_list('hashed_id', flat=True)
+        
+        # Convert the QuerySet to a list
+        hashes_list = list(hashes)
+        
+        return Response(hashes_list, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def Get_device_urls(request):
     user_id = request.headers.get('id')
     user = get_object_or_404(User,pk=user_id)
@@ -62,7 +95,6 @@ def Get_device_urls(request):
     return Response(devices,status=status.HTTP_200_OK)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def Delete_device_url(request):
     user_id = request.headers.get('id')
     user = get_object_or_404(User,pk=user_id)

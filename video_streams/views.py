@@ -2,6 +2,14 @@ from django.http import StreamingHttpResponse
 from django.utils.decorators import async_only_middleware
 from AI.CAMERA import VideoCamera
 import asyncio
+from django.utils.decorators import method_decorator
+from shared_middlewares.authentication import AuthenticationMiddleware
+from General.models import ActiveUser
+from rest_framework.response import Response
+from rest_framework import status
+from django.http import JsonResponse
+from asgiref.sync import sync_to_async
+
 #Initialize a single VideoCamera instance
 
 cameras = [0]
@@ -28,9 +36,19 @@ class AsyncStreamingHttpResponse(StreamingHttpResponse):
 
 
 @async_only_middleware
-async def video_feed(request,camera_id):
-    cam = camera_instances[int(camera_id)]
-    response = AsyncStreamingHttpResponse(gen(cam), content_type='multipart/x-mixed-replace; boundary=frame')
-    response.streaming = True
-    return response
-    
+async def video_feed(request, camera_id):
+    hashed_id = request.headers.get("id")
+    if hashed_id:
+        try:
+            user = await sync_to_async(ActiveUser.objects.get)(hashed_id=hashed_id)
+            if user:
+                cam = camera_instances[int(camera_id)]
+                response =  AsyncStreamingHttpResponse(gen(cam), content_type='multipart/x-mixed-replace; boundary=frame')
+                response.streaming = True
+                return response
+        except ActiveUser.DoesNotExist:
+            return JsonResponse({"error": "Unauthorized!"}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    else:
+        return JsonResponse({"error": "Unauthorized!"}, status=status.HTTP_401_UNAUTHORIZED)
