@@ -3,7 +3,7 @@ from .  import views
 from shared_middlewares.authentication import AuthenticationMiddleware
 
 urlpatterns = [
-    path("test",AuthenticationMiddleware(views.test)),
+    path("test",views.test),
     path("np",views.notificationPanel,name="notificationPanel"),
     path("register",views.register,name="Register"),
     path("login",views.login,name="Login"),
@@ -12,4 +12,5 @@ urlpatterns = [
     path("deleteDevice",AuthenticationMiddleware(views.Delete_device_url),name="Delete_device_url"),
     path("gethashes",AuthenticationMiddleware(views.Get_hashed),name="GetHash"),
     path("logout",AuthenticationMiddleware(views.logout),name="logout"),
+    path("addget",AuthenticationMiddleware(views.Add_get),name="aDDGET"),
 ]

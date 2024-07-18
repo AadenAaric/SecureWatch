@@ -5,6 +5,8 @@ import asyncio
 from video_streams.views import camera_instances
 from AI.detector import *
 from asgiref.sync import async_to_sync
+# shared_middlewares/authentication.py
+
 
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):

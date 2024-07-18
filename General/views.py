@@ -4,14 +4,28 @@ from rest_framework.response import Response
 from django.utils.decorators import method_decorator
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .models import User,ActiveUser
+from .models import User,ActiveUser,Devices
 from .serializers import UserSerializer, ActiveUserSerializer
 import json
 from .utils import hash_user_id
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
+from django.middleware.csrf import get_token
+from AI.CAMERA import VideoCamera
+from shared_files.Camera_Initializer import rel,addCam
+from video_streams.views import update_instances
+    
 
 
+def add_device(device_url):
+    global camera_instances
+    Dev = Devices()
+    Dev.add_or_update_devices(device_url)
+
+
+def delete_device(device_name):
+    global camera_instances
+    Devices.delete_device_by_name(name=device_name)
 
 #testing api
 def test(request):
@@ -33,19 +47,21 @@ def register(request):
 
 @api_view(['POST'])
 def login(request):
+    csrf = get_token(request=request)
     email = request.data.get('email')
     password = request.data.get('password')
     try:
         user = User.objects.get(email=email, password=password)
         hash = hash_user_id(user.id)
-        ActSer = ActiveUserSerializer(data={"hashed_id":hash,"user_id":user.id})
+        ActSer = ActiveUserSerializer(data={"hashed_id":hash,"user_id":user.id,"is_active":"true"})
         if ActSer.is_valid():
            ActSer.save() 
            response = Response({
                 "message": "Login Successful",
-                "id": hash
+                "id": hash,
+                "csrf":csrf
             }, status=status.HTTP_200_OK)
-           response.set_cookie(key='csrftoken', value=request.COOKIES.get('csrftoken'))
+           #response.set_cookie(key='csrftoken', value=request.COOKIES.get('csrftoken'))
            return response
         return Response({"message": "DataBase Error!"}, status=status.HTTP_400_BAD_REQUEST)
     except User.DoesNotExist:
@@ -55,22 +71,39 @@ def login(request):
 
 @api_view(['POST'])
 def logout(request):
-    user = request.user
-    user.delete()
-    return Response({"message":"Successfully logged out!"},status=status.HTTP_200_OK)
+        user = request.user
+        user.delete()
+        return Response({"message":"Successfully logged out!"},status=status.HTTP_200_OK)
     
     
 #Updating, Fetching and Deleting devices----------------------------------------------------------------------------------
 
 @api_view(['PUT'])
 def update_device_urls(request):
-    user_id = request.headers.get('id')
+    user_id = request.id
     user = get_object_or_404(User, pk=user_id)
+    new_device_url = request.data.get('device_url')
+    key, value = list(new_device_url.items())[0]
+    Dev = Devices()
+    if new_device_url:
+        add_device(new_device_url)
+        addCam(key,value)
+        update_instances()
+        return Response({"message":f"device added!{key,value}"},status=status.HTTP_200_OK)
+
+
+
+
+@api_view(['PUT'])
+def Add_get(request):
+    user_id = request.id
+    user = get_object_or_404(User,pk=user_id)
+    devices = user.device_urls
     new_device_url = request.data.get('device_url')
     if new_device_url:
         user.device_urls.update(new_device_url)
         user.save()
-        return Response({"message":"device added!"},status=status.HTTP_200_OK)
+        return Response(devices,status=status.HTTP_200_OK)
     return Response({"message":"Device Url not Provided!"},status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -89,21 +122,17 @@ def Get_hashed(request):
     
 @api_view(['GET'])
 def Get_device_urls(request):
-    user_id = request.headers.get('id')
-    user = get_object_or_404(User,pk=user_id)
-    devices = user.device_urls
+    Dev = Devices()
+    devices = Dev.get_Devices()
     return Response(devices,status=status.HTTP_200_OK)
 
-@api_view(['POST'])
+@api_view(['DELETE'])
 def Delete_device_url(request):
-    user_id = request.headers.get('id')
-    user = get_object_or_404(User,pk=user_id)
-    device = request.data.get('key')
-    if user.device_urls:
-        if device in user.device_urls:
-          del user.device_urls[device]
-          user.save()
-          return Response({"message":f"{device} successfully Deleted!"},status=status.HTTP_200_OK)
-        return Response({"message":"Not Found!"},status=status.HTTP_400_BAD_REQUEST)
-    return Response({"message":"No Device!"},status=status.HTTP_400_BAD_REQUEST)
+    name = request.data.get('key')
+    if name:
+        delete_device(device_name=name)
+        rel(name)
+        update_instances()
+        return Response({"message":f"{name} successfully Deleted!"},status=status.HTTP_200_OK)
+    return Response({"message":"Not Found!"},status=status.HTTP_400_BAD_REQUEST)
     

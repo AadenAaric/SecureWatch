@@ -25,7 +25,7 @@ SECRET_KEY = 'your secret key here!'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['13.202.117.177','127.0.0.1','localhost']
+ALLOWED_HOSTS = ['35.154.37.245','127.0.0.1','localhost']
 
 
 # Application definition
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'channels',
     'notifications',
     'rest_framework',
+    'corsheaders',
 ]
 
 
@@ -48,7 +49,7 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
-    #'shared_middlewares.authentication.AuthenticationMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -57,6 +58,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -142,3 +145,6 @@ CSRF_COOKIE_NAME = "csrftoken"  # Optional: Specify the CSRF cookie name
 CSRF_HEADER_NAME = "HTTP_X_CSRFTOKEN"  # Define the header name to expect
 
 CSRF_COOKIE_HTTPONLY = False  # Ensure CSRF cookie can be accessed by JavaScript if needed
+# CSRF_COOKIE_DOMAIN = None
+# CSRF_COOKIE_SECURE = False  # Set to False for development over HTTP
+# CSRF_TRUSTED_ORIGINS = ['http://35.154.37.245:5000/api/login','http://35.154.37.245:5000/api/logout'] 

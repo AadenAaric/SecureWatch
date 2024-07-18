@@ -4,17 +4,22 @@ from AI.CAMERA import VideoCamera
 import asyncio
 from django.utils.decorators import method_decorator
 from shared_middlewares.authentication import AuthenticationMiddleware
-from General.models import ActiveUser
+from General.models import ActiveUser, User, Devices
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import JsonResponse
 from asgiref.sync import sync_to_async
-
+from shared_files.Camera_Initializer import get_instances
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 #Initialize a single VideoCamera instance
 
-cameras = [0]
-camera_instances = {}
-camera_instances = {cameras.index(i): VideoCamera(i,cameras.index(i)) for i in cameras}
+
+camera_instances = get_instances()
+
+def update_instances():
+    global camera_instances
+    camera_instances = get_instances()
 
 
 async  def gen(camera):
@@ -37,12 +42,12 @@ class AsyncStreamingHttpResponse(StreamingHttpResponse):
 
 @async_only_middleware
 async def video_feed(request, camera_id):
-    hashed_id = request.headers.get("id")
+    hashed_id = "$2b$12$xV1jtHtPUyub7k5ZpNF2Ru.krhmkt3SWzgok26RmF6R9dqkyFbV2m"
     if hashed_id:
         try:
             user = await sync_to_async(ActiveUser.objects.get)(hashed_id=hashed_id)
             if user:
-                cam = camera_instances[int(camera_id)]
+                cam = camera_instances[camera_id]
                 response =  AsyncStreamingHttpResponse(gen(cam), content_type='multipart/x-mixed-replace; boundary=frame')
                 response.streaming = True
                 return response
@@ -52,3 +57,4 @@ async def video_feed(request, camera_id):
             return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     else:
         return JsonResponse({"error": "Unauthorized!"}, status=status.HTTP_401_UNAUTHORIZED)
+    

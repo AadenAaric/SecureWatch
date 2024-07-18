@@ -79,6 +79,34 @@ class FrameProcessor:
                 self.prediction_queue.put(prediction)
 
         return [rois, landmarks, face_identities]
+    
+    @dispatch(np.ndarray,str)
+    def face_process(self, frame, camera_id):
+        rois = self.face_detector.infer((frame,))
+        if self.QUEUE_SIZE > len(rois):
+            rois = rois[:self.QUEUE_SIZE]
+        landmarks = self.landmarks_detector.infer((frame, rois))
+        face_identities, unknowns = self.face_identifier.infer((frame, rois, landmarks))
+        
+        # Collect predictions and push them to the queue
+        with self.lock:
+            for roi, identity in zip(rois, face_identities):
+                if identity.id != FaceIdentifier.UNKNOWN_ID:
+                    if (1 - identity.distance) > 0.75:
+                        prediction = {
+                            'camera_id': camera_id,
+                            'identity': self.face_identifier.get_identity_label(identity.id),
+                            'confidence': 1 - identity.distance
+                        }
+                    else:
+                         prediction = {
+                            'camera_id': camera_id,
+                            'identity': "Unknown",
+                            'confidence': 1 - identity.distance
+                        }      
+                self.prediction_queue.put(prediction)
+
+        return [rois, landmarks, face_identities]
 
     def get_predictions(self):
         predictions = []
