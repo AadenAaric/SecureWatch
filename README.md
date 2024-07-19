@@ -1,24 +1,24 @@
-###**AI-Powered Residential Surveillance System**
+# **AI-Powered Residential Surveillance System**
 Our AI-Powered Residential Surveillance System is designed to enhance security and peace of mind for homeowners and property managers. Utilizing advanced artificial intelligence and machine learning technologies, this system offers real-time monitoring of people entering and leaving a residential area.
 
-**Project Structure**
+# **Project Structure**
 The project is organized into several Django apps, each responsible for different aspects of the system's functionality. Here is a brief overview of the primary apps in the project:
 
-**General**
+# **General**
 The General app contains the general REST APIs required for the overall functioning of the surveillance system. This includes APIs for user authentication, user management, and other common functionalities that are shared across the system.
 
-**video_streamer**
+# **video_streamer**
 The video_streamer app handles video streaming. This app is responsible for managing multiple camera resources, capturing and processing video frames, and providing live streaming capabilities. It also includes functionalities for face detection, recognition, and tracking.
 
-**notification**
+# **notification**
 The notification app manages notifications over WebSockets. This app is responsible for real-time communication between the server and clients, ensuring timely delivery of alerts and updates. It integrates with the system to notify users about important events, such as the detection of unrecognized individuals or other security alerts.
 
 By structuring the project into these apps, we ensure a modular and organized approach, making the system easier to manage, maintain, and extend.
 
-**Getting Started**
+# **Getting Started**
 To get the AI-Powered Residential Surveillance System up and running, follow these steps:
 
-**Prerequisites**
+# **Prerequisites**
 Make sure you have the following installed on your system:
 
 Python 3.10+
@@ -30,36 +30,35 @@ Installation
 Clone the repository:
 
 **bash**
-Copy code
+`Copy code
 git clone <repository-url>
-cd <repository-directory>
+cd <repository-directory>`
 Install dependencies:
 
 **bash**
-Copy code
-pip install -r requirements.txt
+`Copy code
+pip install -r requirements.txt`
 Setup the database:
 
 **bash**
-Copy code
+`Copy code
 python manage.py makemigrations
 python manage.py migrate
-Create a superuser (for accessing the Django admin interface):
+`
 
-**bash**
-Copy code
-python manage.py createsuperuser
+
 Run the development server:
 
-**bash**
+`**bash**
 Copy code
-python manage.py runserver
+python manage.py runserver`
+
 Running the Server
 Once you have completed the installation steps, you can start the server using the following command:
 
-**bash**
+`**bash**
 Copy code
-python manage.py runserver
+python manage.py runserver`
 The development server will start, and you can access the application in your web browser at http://127.0.0.1:8000/.
 
 **WebSocket Server**
