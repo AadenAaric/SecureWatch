@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+video
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -148,3 +148,13 @@ CSRF_COOKIE_HTTPONLY = False  # Ensure CSRF cookie can be accessed by JavaScript
 # CSRF_COOKIE_DOMAIN = None
 # CSRF_COOKIE_SECURE = False  # Set to False for development over HTTP
 # CSRF_TRUSTED_ORIGINS = ['http://35.154.37.245:5000/api/login','http://35.154.37.245:5000/api/logout'] 
+
+import os
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'assets')

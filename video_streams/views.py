@@ -13,6 +13,7 @@ from shared_files.Camera_Initializer import get_instances
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 #Initialize a single VideoCamera instance
+from concurrent.futures import ThreadPoolExecutor
 
 
 camera_instances = get_instances()

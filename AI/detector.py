@@ -37,7 +37,7 @@ class FrameProcessor:
         self.face_detector.deploy(device)
         self.landmarks_detector.deploy(device, self.QUEUE_SIZE)
         self.face_identifier.deploy(device, self.QUEUE_SIZE)
-        self.faces_database = FacesDatabase(os.path.join(BASE_DIR,'AI','face_img'), self.face_identifier, self.landmarks_detector)
+        self.faces_database = FacesDatabase(os.path.join(BASE_DIR,'media','MiniApp_Images'), self.face_identifier, self.landmarks_detector)
         self.face_identifier.set_faces_database(self.faces_database)
         log.info('Database is built, registered {} identities.'.format(len(self.faces_database)))
 

@@ -45,3 +45,27 @@ class ActiveUser(models.Model):
     is_active = models.BooleanField(default=True)
     def __str__(self):
         return self.hashed_id
+    
+
+
+
+import os
+
+class Image(models.Model):
+    name = models.CharField(max_length=255)
+    pic = models.FileField(upload_to='MiniApp_Images')
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            # Find the highest current count for this person's images
+            person_images = Image.objects.filter(name=self.name)
+            if person_images.exists():
+                max_count = max(
+                    [int(os.path.splitext(img.pic.name.split('-')[-1])[0]) for img in person_images]
+                )
+                count = max_count + 1
+            else:
+                count = 1
+            # Set the filename
+            self.pic.name = f"{self.name}-{count}.jpg"
+        super().save(*args, **kwargs)

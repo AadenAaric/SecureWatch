@@ -1,4 +1,4 @@
-from django.shortcuts import render, HttpResponse, get_object_or_404
+from django.shortcuts import render, HttpResponse, get_object_or_404, redirect
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.utils.decorators import method_decorator
@@ -135,4 +135,62 @@ def Delete_device_url(request):
         update_instances()
         return Response({"message":f"{name} successfully Deleted!"},status=status.HTTP_200_OK)
     return Response({"message":"Not Found!"},status=status.HTTP_400_BAD_REQUEST)
-    
+
+
+#------------------------------------------------------------------------------------------------------
+# views.py
+
+from .forms import ImagesForm
+from .models import Image
+import os
+def index(request):
+    images = Image.objects.all()
+    context = {'images': images}
+    return render(request, "index.html", context)
+
+def fileupload(request):
+    form = ImagesForm(request.POST, request.FILES)
+    if request.method == 'POST':
+        if form.is_valid():
+            name = form.cleaned_data['name']
+            images = request.FILES.getlist('pic')
+            for image in images:
+                # Find the highest current count for this person's images
+                person_images = Image.objects.filter(name=name)
+                if person_images.exists():
+                    max_count = max(
+                        [int(os.path.splitext(img.pic.name.split('-')[-1])[0]) for img in person_images]
+                    )
+                    count = max_count + 1
+                else:
+                    count = 1
+                # Set the filename
+                image_instance = Image(name=name)
+                image_instance.pic.save(f"{name}-{count}.jpg", image)
+                image_instance.save()
+            return redirect('index')
+    context = {'form': form}
+    return render(request, "upload.html", context)
+
+@api_view(['POST'])
+def fileuploadapi(request):
+    form = ImagesForm(request.POST, request.FILES)
+    if form.is_valid():
+            name = form.cleaned_data['name']
+            images = request.FILES.getlist('pic')
+            for image in images:
+                # Find the highest current count for this person's images
+                person_images = Image.objects.filter(name=name)
+                if person_images.exists():
+                    max_count = max(
+                        [int(os.path.splitext(img.pic.name.split('-')[-1])[0]) for img in person_images]
+                    )
+                    count = max_count + 1
+                else:
+                    count = 1
+                # Set the filename
+                image_instance = Image(name=name)
+                image_instance.pic.save(f"{name}-{count}.jpg", image)
+                image_instance.save()
+            return Response({"message":f"{name} images successfully added !"},status=status.HTTP_200_OK)
+    return Response({"message":f"{name} Error in Adding Data!"},status=status.HTTP_200_OK)
