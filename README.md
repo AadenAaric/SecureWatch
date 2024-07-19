@@ -49,25 +49,21 @@ python manage.py migrate
 
 Run the development server:
 
-`**bash**
-Copy code
+**bash**
+`Copy code
 python manage.py runserver`
 
 Running the Server
 Once you have completed the installation steps, you can start the server using the following command:
 
-`**bash**
-Copy code
+**bash**
+`Copy code
 python manage.py runserver`
 The development server will start, and you can access the application in your web browser at http://127.0.0.1:8000/.
 
 **WebSocket Server**
 For the notification app to handle real-time notifications, you need to run the Django Channels server. Make sure daphne is installed and use the following command:
 
-**bash**
-Copy code
-daphne -b 0.0.0.0 -p 8001 <project_name>.asgi:application
-Replace <project_name> with the name of your Django project.
 
 **Accessing the Admin Interface**
 To manage users, cameras, and other settings, access the Django admin interface at http://127.0.0.1:8000/ and log in with the superuser credentials you created earlier.
