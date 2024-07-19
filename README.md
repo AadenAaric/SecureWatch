@@ -30,18 +30,18 @@ Installation
 Clone the repository:
 
 **bash**
-`Copy code
+`
 git clone <repository-url>
 cd <repository-directory>`
 Install dependencies:
 
 **bash**
-`Copy code
+`
 pip install -r requirements.txt`
 Setup the database:
 
 **bash**
-`Copy code
+`
 python manage.py makemigrations
 python manage.py migrate
 `
@@ -50,14 +50,14 @@ python manage.py migrate
 Run the development server:
 
 **bash**
-`Copy code
+`
 python manage.py runserver`
 
 Running the Server
 Once you have completed the installation steps, you can start the server using the following command:
 
 **bash**
-`Copy code
+`
 python manage.py runserver`
 The development server will start, and you can access the application in your web browser at http://127.0.0.1:8000/.
 
