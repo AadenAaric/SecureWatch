@@ -15,5 +15,7 @@ urlpatterns = [
     path("addget",AuthenticationMiddleware(views.Add_get),name="aDDGET"),
     path('', views.index, name = 'index'),
     path('upload', views.fileupload, name = "File_Uploads"),
-    path('uploadapi', views.fileuploadapi, name = "File_Uploads")
+    path('uploadapi', views.fileuploadapi, name = "File_Uploads"),
+    path('sendToken',AuthenticationMiddleware(views.getDeviceToken), name="SendToken" ),
+    path('gallery', views.image_gallery, name='image_gallery'),
 ]

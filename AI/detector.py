@@ -93,18 +93,20 @@ class FrameProcessor:
             for roi, identity in zip(rois, face_identities):
                 if identity.id != FaceIdentifier.UNKNOWN_ID:
                     if (1 - identity.distance) > 0.75:
-                        prediction = {
-                            'camera_id': camera_id,
-                            'identity': self.face_identifier.get_identity_label(identity.id),
-                            'confidence': 1 - identity.distance
-                        }
+                        # prediction = {
+                        #     'camera_id': camera_id,
+                        #     'identity': self.face_identifier.get_identity_label(identity.id),
+                        #     'confidence': 1 - identity.distance
+                        # }
+                        pass
                     else:
                          prediction = {
                             'camera_id': camera_id,
                             'identity': "Unknown",
                             'confidence': 1 - identity.distance
-                        }      
-                self.prediction_queue.put(prediction)
+                        }     
+                         self.prediction_queue.put(prediction) 
+                
 
         return [rois, landmarks, face_identities]
 

@@ -11,10 +11,8 @@ from .utils import hash_user_id
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from django.middleware.csrf import get_token
-from AI.CAMERA import VideoCamera
-from shared_files.Camera_Initializer import rel,addCam
+from shared_files.Camera_Initializer import rel,addCam,reinitialize_cameras
 from video_streams.views import update_instances
-    
 
 
 def add_device(device_url):
@@ -126,7 +124,7 @@ def Get_device_urls(request):
     devices = Dev.get_Devices()
     return Response(devices,status=status.HTTP_200_OK)
 
-@api_view(['DELETE'])
+@api_view(['POST'])
 def Delete_device_url(request):
     name = request.data.get('key')
     if name:
@@ -168,6 +166,7 @@ def fileupload(request):
                 image_instance = Image(name=name)
                 image_instance.pic.save(f"{name}-{count}.jpg", image)
                 image_instance.save()
+            reinitialize_cameras()
             return redirect('index')
     context = {'form': form}
     return render(request, "upload.html", context)
@@ -192,5 +191,25 @@ def fileuploadapi(request):
                 image_instance = Image(name=name)
                 image_instance.pic.save(f"{name}-{count}.jpg", image)
                 image_instance.save()
+            reinitialize_cameras()
             return Response({"message":f"{name} images successfully added !"},status=status.HTTP_200_OK)
     return Response({"message":f"{name} Error in Adding Data!"},status=status.HTTP_200_OK)
+#-----------------------------------------------------------------------------------------------------
+from shared_files.FCM import Tokens
+@api_view(['POST'])
+def getDeviceToken(request):
+    token = request.data.get('token')
+    Tokens.append(token)
+    print(Tokens)
+    return Response({"mesg":"TokenReceived!"},status=status.HTTP_200_OK)
+
+print(Tokens)
+
+#-------------------------------------------------------------------------------------------------------------------
+from django.conf import settings
+def image_gallery(request):
+    image_folder = os.path.join(settings.MEDIA_ROOT)  # Adjust the path as needed
+    images = os.listdir(image_folder)
+    image_urls = [os.path.join(settings.MEDIA_URL, image) for image in images]
+
+    return render(request, 'index.html', {'images': image_urls})

@@ -36,10 +36,13 @@ async def fetch_frames():
 
 def start_background_task():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(func=lambda: asyncio.run(fetch_frames()), trigger="interval", seconds=0)
+    scheduler.add_job(func=lambda: asyncio.run(fetch_frames()), trigger="interval", seconds=2)
     scheduler.start()
     # Shut down the scheduler when exiting the app
     atexit.register(lambda: scheduler.shutdown())
+
+
+
 
 def addCam(key, value):
     global camera_instances
@@ -58,6 +61,19 @@ def rel(camera_id):
     else:
         print(f"Camera ID {camera_id} not found.")
 
+def reinitialize_cameras():
+    global camera_instances
+
+    # Release all existing camera instances
+    for camera_id, camera in camera_instances.items():
+        print("starting releasing camera")
+        camera_instances[camera_id].release()
+        print("cam released!")
+    camera_instances.clear()
+
+    # Reinitialize cameras
+    initialize_cameras()
+    print("Cameras reinitialized")
+
 # Initialize cameras and start the background task
 initialize_cameras()
-start_background_task()

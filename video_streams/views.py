@@ -48,6 +48,7 @@ async def video_feed(request, camera_id):
         try:
             user = await sync_to_async(ActiveUser.objects.get)(hashed_id=hashed_id)
             if user:
+                update_instances()
                 cam = camera_instances[camera_id]
                 response =  AsyncStreamingHttpResponse(gen(cam), content_type='multipart/x-mixed-replace; boundary=frame')
                 response.streaming = True

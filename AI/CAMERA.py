@@ -1,81 +1,3 @@
-# import cv2
-# from threading import Thread, Lock
-# from detector import FrameProcessor, draw_face_detections
-# import asyncio
-# import json
-# from channels.layers import get_channel_layer
-# from asgiref.sync import async_to_sync
-# import time
-
-# class VideoCamera:
-#     def __init__(self, src, camera_id):
-#         self.cap = cv2.VideoCapture(src)
-#         self.lock = Lock()
-#         self.frame = None
-#         self.running = True
-#         self.frame_processor = FrameProcessor()
-#         self.camera_id = camera_id
-
-#         # Start the frame update thread
-#         self.thread = Thread(target=self.update_frame, args=())
-#         self.thread.start()
-
-#         # Start the prediction sending thread
-#         # self.prediction_thread = Thread(target=self.send_predictions, args=())
-#         # self.prediction_thread.start()
-
-#     def release(self):
-#         if self.cap.isOpened():
-#             self.thread.join()
-#             self.prediction_thread.join()
-#             self.cap.release()
-#             cv2.destroyAllWindows()
-
-#     def __del__(self):
-#         self.running = False
-#         self.thread.join()
-#         self.prediction_thread.join()
-#         self.cap.release()
-
-#     def update_frame(self):
-#         while self.running:
-#             ret, frame = self.cap.read()
-#             with self.lock:
-#                 if ret:
-#                     self.frame = frame
-#                 else:
-#                     self.frame = None
-
-#     async def get_frame(self):
-#         with self.lock:
-#             if self.frame is None:
-#                 return None  # Return early if frame is None
-
-#             frame_copy = self.frame.copy()
-
-#         # Apply face detection and recognition
-#         detections = self.frame_processor.face_process(frame_copy, self.camera_id)
-#         frame_copy = draw_face_detections(frame_copy, self.frame_processor, detections)
-
-#         # Encode frame as JPEG
-#         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 100]  # Adjust quality value (0-100) as needed
-#         _, buffer = cv2.imencode('.jpg', frame_copy, encode_param)
-#         frame_bytes = buffer.tobytes()
-#         return frame_bytes
-
-#     # def send_predictions(self):
-#     #     channel_layer = get_channel_layer()
-#     #     while self.running:
-#     #         predictions = self.frame_processor.get_predictions()
-#     #         for prediction in predictions:
-#     #             async_to_sync(channel_layer.group_send)(
-#     #                 'notifications',
-#     #                 {
-#     #                     'type': 'send_notification',
-#     #                     'message': prediction
-#     #                   }
-#     #             )
-#     #         time.sleep(1)
 import cv2
 from threading import Thread, Lock
 from .detector import FrameProcessor, draw_face_detections
@@ -85,13 +7,16 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import time
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
+import requests
+from shared_files.FCM import get_access_token, getDevTokens
 
 class VideoCamera:
     def __init__(self, src, camera_id):
         self.cap = cv2.VideoCapture(src)
         self.lock = Lock()
         self.frame = None
+        self.processed_frame = None
         self.running = True
         self.frame_processor = FrameProcessor()
         self.camera_id = camera_id
@@ -125,17 +50,24 @@ class VideoCamera:
         self.prediction_thread = Thread(target=self.send_predictions, args=())
         self.prediction_thread.start()
 
+        # Start the old recordings management thread
+        self.old_recordings_thread = Thread(target=self.manage_old_recordings, args=())
+        self.old_recordings_thread.start()
+
     def create_video_writer(self):
         video_file = os.path.join(self.video_dir, f'output_{self.camera_id}_{self.start_time.strftime("%Y-%m-%d_%H-%M-%S")}.avi')
         return cv2.VideoWriter(video_file, self.fourcc, self.fps, (self.frame_width, self.frame_height))
 
     def manage_old_recordings(self):
-        now = datetime.now()
-        if (now - self.start_time).days >= 1:
-            self.out.release()  # Close the current video file
-            self.delete_old_videos()  # Delete old videos
-            self.start_time = now
-            self.out = self.create_video_writer()  # Create a new video writer
+        while self.running:
+            now = datetime.now()
+            if (now - self.start_time).days >= 1:
+                with self.lock:
+                    self.out.release()  # Close the current video file
+                    self.delete_old_videos()  # Delete old videos
+                    self.start_time = now
+                    self.out = self.create_video_writer()  # Create a new video writer
+              # Check once an hour
 
     def delete_old_videos(self):
         for filename in os.listdir(self.video_dir):
@@ -145,11 +77,18 @@ class VideoCamera:
 
     def release(self):
         self.running = False
+        print("running is set to False")
         if self.cap.isOpened():
+            print("cam is open")
             self.thread.join()
+            print("thread ended")
             self.prediction_thread.join()
+            print("prediction thread ended")
+            self.old_recordings_thread.join()
+            print("rec thred ended")
             self.cap.release()
-            self.out.release()
+            print("camera is released")
+            
             cv2.destroyAllWindows()
 
     def __del__(self):
@@ -162,41 +101,59 @@ class VideoCamera:
                 if ret:
                     self.frame = frame
                     self.out.write(frame)  # Write the frame to the video file
+
+                    # Apply face detection and recognition
+                    detections = self.frame_processor.face_process(self.frame, self.camera_id)
+                    self.processed_frame = draw_face_detections(self.frame.copy(), self.frame_processor, detections)
                 else:
                     self.frame = None
-
-            self.manage_old_recordings()  # Check and manage old recordings
+                    self.processed_frame = None
 
     async def get_frame(self):
         with self.lock:
-            if self.frame is None:
+            if self.processed_frame is None:
                 return None  # Return early if frame is None
 
-            frame_copy = self.frame.copy()
-
-        # Apply face detection and recognition
-        detections = self.frame_processor.face_process(frame_copy, self.camera_id)
-        frame_copy = draw_face_detections(frame_copy, self.frame_processor, detections)
-
-        # Encode frame as JPEG
-        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 100]  # Adjust quality value (0-100) as needed
-        _, buffer = cv2.imencode('.jpg', frame_copy, encode_param)
-        frame_bytes = buffer.tobytes()
-        return frame_bytes
+            # Encode frame as JPEG
+            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 100]  # Adjust quality value (0-100) as needed
+            _, buffer = cv2.imencode('.jpg', self.processed_frame, encode_param)
+            frame_bytes = buffer.tobytes()
+            return frame_bytes
 
     def send_predictions(self):
         channel_layer = get_channel_layer()
+        token = get_access_token()
+        predictions = 0
+        url = "https://fcm.googleapis.com/v1/projects/watch-3e30d/messages:send"
+        headers = {
+            "Authorization": f"Bearer {token} ",
+        }
+        data = {
+            "message": {
+                "token": "fM5K39a-RfCXwjZEAuKq9r:APA91bGooAwLSlRSnt6uv9FsWMcgt_BMrHhWjfnEiQxZ2j0SDrsiJh9u_mOPFTkNFvQm_4sruJH0IAIZj5MdE3pAPjVnPTj98K7J-8p2oxjIrl7hyHz5RMrymTQTKVmwBSFualOW5TcD",
+                "notification": {
+                    "body": "This is another FCM notification message!",
+                    "title": "FCM Message"
+                }
+            }
+        }
         while self.running:
-            predictions = self.frame_processor.get_predictions()
-            for prediction in predictions:
+            if self.frame_processor.get_predictions():
+                predictions += 1
+            if predictions >= 5:
+                tokens = getDevTokens()
+                print(tokens)
+                for token in tokens:
+                    data["token"] = token
+                    response = requests.post(url, headers=headers, json=data)
+                    if response:
+                        print("FCM: " + str(response.status_code))
                 async_to_sync(channel_layer.group_send)(
                     'notifications',
                     {
                         'type': 'send_notification',
-                        'message': prediction
+                        'message': "Ma Chudao!"
                     }
                 )
+                predictions = 0
             time.sleep(1)
-
-
- 
