@@ -1,11 +1,12 @@
 from django.shortcuts import render, HttpResponse, get_object_or_404, redirect
 from rest_framework.decorators import api_view, permission_classes
+from django.db.models import Count
 from rest_framework.response import Response
 from django.utils.decorators import method_decorator
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .models import User,ActiveUser,Devices
-from .serializers import UserSerializer, ActiveUserSerializer
+from .models import User,ActiveUser,Devices, Image
+from .serializers import UserSerializer, ActiveUserSerializer,ImageNameSerializer
 import json
 from .utils import hash_user_id
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -13,6 +14,7 @@ from django.utils.decorators import method_decorator
 from django.middleware.csrf import get_token
 from shared_files.Camera_Initializer import rel,addCam,reinitialize_cameras
 from video_streams.views import update_instances
+from shared_files.globals import setDevToken, addinTokens, deleteToken
 
 
 def add_device(device_url):
@@ -71,6 +73,8 @@ def login(request):
 def logout(request):
         user = request.user
         user.delete()
+        token = request.data.get("token")
+        deleteToken(token)
         return Response({"message":"Successfully logged out!"},status=status.HTTP_200_OK)
     
     
@@ -128,12 +132,15 @@ def Get_device_urls(request):
 def Delete_device_url(request):
     name = request.data.get('key')
     if name:
-        delete_device(device_name=name)
-        rel(name)
-        update_instances()
-        return Response({"message":f"{name} successfully Deleted!"},status=status.HTTP_200_OK)
+        try:
+            delete_device(device_name=name)
+            rel(name)
+            update_instances()
+            return Response({"message":f"{name} successfully Deleted!"},status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message":f"Error: {e}!"},status=status.HTTP_400_BAD_REQUEST)
+    
     return Response({"message":"Not Found!"},status=status.HTTP_400_BAD_REQUEST)
-
 
 #------------------------------------------------------------------------------------------------------
 # views.py
@@ -195,21 +202,45 @@ def fileuploadapi(request):
             return Response({"message":f"{name} images successfully added !"},status=status.HTTP_200_OK)
     return Response({"message":f"{name} Error in Adding Data!"},status=status.HTTP_200_OK)
 #-----------------------------------------------------------------------------------------------------
-from shared_files.FCM import Tokens
+from shared_files.globals import setDevToken, addinTokens
 @api_view(['POST'])
 def getDeviceToken(request):
     token = request.data.get('token')
-    Tokens.append(token)
-    print(Tokens)
+    setDevToken(token)
+    addinTokens(token)
     return Response({"mesg":"TokenReceived!"},status=status.HTTP_200_OK)
 
-print(Tokens)
 
 #-------------------------------------------------------------------------------------------------------------------
 from django.conf import settings
+@api_view(['GET'])
 def image_gallery(request):
-    image_folder = os.path.join(settings.MEDIA_ROOT)  # Adjust the path as needed
+    image_folder = os.path.join(settings.MEDIA_ROOT,"MiniApp_Images")  # Adjust the path as needed
     images = os.listdir(image_folder)
-    image_urls = [os.path.join(settings.MEDIA_URL, image) for image in images]
+    image_urls = [os.path.join(settings.MEDIA_URL,"MiniApp_Images", image) for image in images]
 
     return render(request, 'index.html', {'images': image_urls})
+
+
+@api_view(["POST"])
+def deleteImage(request):
+    name = request.data.get('name')
+
+    images = Image.objects.filter(name=name)
+    if not images.exists():
+        return Response({"error": "Image not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    # Delete each image file
+    for image in images:
+        image_path = os.path.join(settings.MEDIA_ROOT,"MiniApp_Images", image.pic.name)
+        if os.path.exists(image_path):
+            os.remove(image_path)
+        image.delete()
+        
+    return Response({"message": "Images deleted successfully"}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def GetTrainedNames(request):
+       unique_names = Image.objects.values_list('name', flat=True).distinct()
+       return Response(unique_names)

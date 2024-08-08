@@ -25,7 +25,7 @@ SECRET_KEY = 'your secret key here!'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['34.226.207.25','127.0.0.1','localhost','192.168.18.126']
+ALLOWED_HOSTS = ['18.212.128.54','127.0.0.1','localhost','192.168.18.126',"0.0.0.0"]
 
 
 # Application definition
@@ -60,6 +60,9 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -147,7 +150,7 @@ CSRF_HEADER_NAME = "HTTP_X_CSRFTOKEN"  # Define the header name to expect
 CSRF_COOKIE_HTTPONLY = False  # Ensure CSRF cookie can be accessed by JavaScript if needed
 # CSRF_COOKIE_DOMAIN = None
 # CSRF_COOKIE_SECURE = False  # Set to False for development over HTTP
-# CSRF_TRUSTED_ORIGINS = ['http://35.154.37.245:5000/api/login','http://35.154.37.245:5000/api/logout'] 
+CSRF_TRUSTED_ORIGINS = ['http://18.212.128.54:6000/api/test'] 
 
 import os
 

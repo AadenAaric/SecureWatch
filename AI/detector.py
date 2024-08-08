@@ -135,7 +135,7 @@ def image_recognizer(frame, text, identity, face_point, threshold):
     if identity.id != FaceIdentifier.UNKNOWN_ID:
         if (1 - identity.distance) > threshold:
             textsize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 1)[0]
-            cv2.putText(frame, text, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 1)
+            cv2.putText(frame, text +" "+str(round(1-identity.distance,2)), (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 1)
         else:
             textsize = cv2.getTextSize("Unknown", cv2.FONT_HERSHEY_SIMPLEX, 0.7, 1)[0]
-            cv2.putText(frame, "Unknown", (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 1)
+            cv2.putText(frame, f"Unknown {str(round(1-identity.distance,2))}", (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 1)

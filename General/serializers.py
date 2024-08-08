@@ -11,3 +11,4 @@ class ActiveUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActiveUser
         fields = '__all__'
+

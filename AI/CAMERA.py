@@ -9,7 +9,8 @@ import time
 import os
 from datetime import datetime
 import requests
-from shared_files.FCM import get_access_token, getDevTokens
+from shared_files.FCM import get_access_token
+from shared_files.globals import getDevToken , GetListofToken
 
 class VideoCamera:
     def __init__(self, src, camera_id):
@@ -120,40 +121,71 @@ class VideoCamera:
             frame_bytes = buffer.tobytes()
             return frame_bytes
 
+    # def send_predictions(self):
+    #     channel_layer = get_channel_layer()
+    #     token = get_access_token()
+    #     print(token)
+    #     predictions = 0
+
+    #     url = "https://fcm.googleapis.com/v1/projects/watch-3e30d/messages:send"
+    #     headers = {
+    #         "Authorization": f"Bearer {token}",
+    #     }
+    #     data = {
+    #         "message": {
+    #             "token": "hereisToken",
+    #             "notification": {
+    #                 "body": "This is another FCM notification message!",
+    #                 "title": "FCM Message"
+    #             }
+    #         }
+    #     }
+        
+    #     while self.running:
+    #         if self.frame_processor.get_predictions():
+    #             predictions += 1
+    #         if predictions >= 5:
+    #             token = getDevToken()
+    #             data["message"]["token"] = token
+    #             response = requests.post(url, headers=headers, json=data)
+    #             print("FCM: " + str(response.status_code))
+    #             async_to_sync(channel_layer.group_send)(
+    #                 'notifications',
+    #                 {
+    #                     'type': 'send_notification',
+    #                     'message': "Ma Chudao!"
+    #                 }
+    #             )
+    #             predictions = 0
+    #         time.sleep(1)
+    
     def send_predictions(self):
         channel_layer = get_channel_layer()
         token = get_access_token()
+        print(token)
         predictions = 0
+
         url = "https://fcm.googleapis.com/v1/projects/watch-3e30d/messages:send"
         headers = {
-            "Authorization": f"Bearer {token} ",
+            "Authorization": f"Bearer {token}",
         }
         data = {
             "message": {
-                "token": "fM5K39a-RfCXwjZEAuKq9r:APA91bGooAwLSlRSnt6uv9FsWMcgt_BMrHhWjfnEiQxZ2j0SDrsiJh9u_mOPFTkNFvQm_4sruJH0IAIZj5MdE3pAPjVnPTj98K7J-8p2oxjIrl7hyHz5RMrymTQTKVmwBSFualOW5TcD",
+                "token": "hereisToken",
                 "notification": {
                     "body": "This is another FCM notification message!",
                     "title": "FCM Message"
                 }
             }
         }
+        
         while self.running:
             if self.frame_processor.get_predictions():
                 predictions += 1
             if predictions >= 5:
-                tokens = getDevTokens()
-                print(tokens)
-                for token in tokens:
-                    data["token"] = token
+                for token in GetListofToken():
+                    data["message"]["token"] = token
                     response = requests.post(url, headers=headers, json=data)
-                    if response:
-                        print("FCM: " + str(response.status_code))
-                async_to_sync(channel_layer.group_send)(
-                    'notifications',
-                    {
-                        'type': 'send_notification',
-                        'message': "Ma Chudao!"
-                    }
-                )
+                    print("FCM: " + str(response.status_code))
                 predictions = 0
             time.sleep(1)

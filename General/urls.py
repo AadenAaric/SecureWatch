@@ -18,4 +18,7 @@ urlpatterns = [
     path('uploadapi', views.fileuploadapi, name = "File_Uploads"),
     path('sendToken',AuthenticationMiddleware(views.getDeviceToken), name="SendToken" ),
     path('gallery', views.image_gallery, name='image_gallery'),
+    path('deleteImage', views.deleteImage, name='deleteimage'),
+    path('GetTrainedData', views.GetTrainedNames, name='GetTrainedData'),
+
 ]
