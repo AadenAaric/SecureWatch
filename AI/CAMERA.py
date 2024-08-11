@@ -14,7 +14,14 @@ from shared_files.globals import getDevToken , GetListofToken
 
 class VideoCamera:
     def __init__(self, src, camera_id):
-        self.cap = cv2.VideoCapture(src)
+        try:
+            self.cap = cv2.VideoCapture(src)
+        except:
+            print("camera nhi chala")
+
+        if not self.cap.isOpened():
+            raise ValueError(f"Cannot open video source {src}")
+        self.src = src
         self.lock = Lock()
         self.frame = None
         self.processed_frame = None
@@ -97,18 +104,23 @@ class VideoCamera:
 
     def update_frame(self):
         while self.running:
-            ret, frame = self.cap.read()
-            with self.lock:
-                if ret:
-                    self.frame = frame
-                    self.out.write(frame)  # Write the frame to the video file
+            try:
+                ret, frame = self.cap.read()
+                with self.lock:
+                    if ret:
+                        self.frame = frame
+                        self.out.write(frame)  # Write the frame to the video file
 
-                    # Apply face detection and recognition
-                    detections = self.frame_processor.face_process(self.frame, self.camera_id)
-                    self.processed_frame = draw_face_detections(self.frame.copy(), self.frame_processor, detections)
-                else:
-                    self.frame = None
-                    self.processed_frame = None
+                        # Apply face detection and recognition
+                        detections = self.frame_processor.face_process(self.frame, self.camera_id)
+                        self.processed_frame = draw_face_detections(self.frame.copy(), self.frame_processor, detections)
+                    else:
+                        self.frame = None
+                        self.processed_frame = None
+            except Exception as e:
+                self.release()
+                break
+
 
     async def get_frame(self):
         with self.lock:
@@ -173,8 +185,8 @@ class VideoCamera:
             "message": {
                 "token": "hereisToken",
                 "notification": {
-                    "body": "This is another FCM notification message!",
-                    "title": "FCM Message"
+                    "body": "Unknown Person Detected!",
+                    "title": "Alert"
                 }
             }
         }

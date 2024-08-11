@@ -6,7 +6,7 @@ from django.utils.decorators import method_decorator
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import User,ActiveUser,Devices, Image
-from .serializers import UserSerializer, ActiveUserSerializer,ImageNameSerializer
+from .serializers import UserSerializer, ActiveUserSerializer
 import json
 from .utils import hash_user_id
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -88,8 +88,11 @@ def update_device_urls(request):
     key, value = list(new_device_url.items())[0]
     Dev = Devices()
     if new_device_url:
+        try:
+            addCam(key,value)
+        except:
+            return Response({"message":f"Camera Error!"},status=status.HTTP_400_BAD_REQUEST)
         add_device(new_device_url)
-        addCam(key,value)
         update_instances()
         return Response({"message":f"device added!{key,value}"},status=status.HTTP_200_OK)
 

@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
+import logging
 
 camera_instances = {}
 
@@ -13,18 +14,21 @@ def initialize_cameras():
     dev = Devices()
     cameras = dev.get_Devices()  # Assuming this returns a dictionary
 
-    # Convert values with a single character to int
-    for key, value in cameras.items():
-        if len(str(value)) == 1:
-            cameras[key] = int(value)
-
-    # Create new camera instances
     try:
-        camera_instances = {key: VideoCamera(cameras[key], key) for key in cameras}
-        print("cameras initialized!")
-        print(camera_instances)
+        # Initialize camera instances safely
+        for key, value in cameras.items():
+            if len(str(value)) == 1:
+                cameras[key] = int(value)
+            try:
+                camera_instances[key] = VideoCamera(cameras[key], key)
+                logging.info(f"Camera {key} initialized successfully.")
+            except ValueError as ve:
+                logging.warning(f"Skipping camera {key}: {ve}")
+            except Exception as e:
+                logging.error(f"Unexpected error initializing camera {key}: {e}")
     except Exception as e:
-        print(f"Error initializing cameras: {e}")
+        logging.critical(f"Critical error initializing cameras: {e}")
+        raise e  # Raise the exception after logging to avoid silent failures
 
 async def fetch_frames():
     for camera_id, camera in camera_instances.items():
@@ -46,9 +50,13 @@ def start_background_task():
 
 def addCam(key, value):
     global camera_instances
-    if value.isdigit():
-        value = int(value)
-    camera_instances[key] = VideoCamera(value, key)
+    try:
+        if value.isdigit():
+            value = int(value)
+        camera_instances[key] = VideoCamera(value, key)
+    except Exception as e:
+        print("error in adding camera")
+        raise e
 
 def get_instances():
     global camera_instances
@@ -76,4 +84,9 @@ def reinitialize_cameras():
     print("Cameras reinitialized")
 
 # Initialize cameras and start the background task
+
+# from threading import Thread
+# ini_cam = Thread(target=initialize_cameras, args=())
+# ini_cam.start()
+
 initialize_cameras()
